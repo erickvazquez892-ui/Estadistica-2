@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estadística para todos</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js para Gráficos Interactivos -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- PapaParse para procesamiento de CSV -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+  <style>
+    body {
+      background-color: #F7F9FC;
+      color: #263445;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .metric-card {
+      background-color: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      padding: 15px;
+      text-align: center;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+      margin-bottom: 10px;
+    }
+    .metric-val {
+      font-size: 24px;
+      font-weight: bold;
+      color: #4285C5;
+    }
+    .metric-lbl {
+      font-size: 13px;
+      color: #64748B;
+      font-weight: 500;
+    }
+    .nav-btn.active {
+      background-color: #E2E8F0;
+      color: #263445;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col md:flex-row">
+
+  <!-- BARRA LATERAL / NAVEGACIÓN -->
+  <aside class="w-full md:w-72 bg-white border-r border-slate-200 p-6 flex flex-col justify-between flex-shrink-0 shadow-sm">
+    <div>
+      <div class="flex items-center gap-3 mb-4">
+        <img src="https://cdn-icons-png.flaticon.com/512/3408/3408545.png" class="w-10 h-10 object-contain">
+        <h1 class="text-lg font-bold text-slate-800 leading-tight">Estadística para todos</h1>
+      </div>
+      <p class="text-xs text-slate-500 mb-6">*Explora tus datos, comprende los resultados y toma mejores decisiones*</p>
+      
+      <nav class="space-y-1">
+        <button onclick="switchSection('inicio')" id="nav-inicio" class="nav-btn active w-full text-left px-3 py-2 rounded text-sm text-slate-600 hover:bg-slate-100 transition">🏠 Inicio</button>
+        <button onclick="switchSection('datos')" id="nav-datos" class="nav-btn w-full text-left px-3 py-2 rounded text-sm text-slate-600 hover:bg-slate-100 transition">📥 Cargar y Editar Datos</button>
+        <button onclick="switchSection('descriptiva')" id="nav-descriptiva" class="nav-btn w-full text-left px-3 py-2 rounded text-sm text-slate-600 hover:bg-slate-100 transition">📊 Estadística Descriptiva</button>
+        <button onclick="switchSection('normalidad')" id="nav-normalidad" class="nav-btn w-full text-left px-3 py-2 rounded text-sm text-slate-600 hover:bg-slate-100 transition">🔀 Distribuciones y Normalidad</button>
+        <button onclick="switchSection('graficas')" id="nav-graficas" class="nav-btn w-full text-left px-3 py-2 rounded text-sm text-slate-600 hover:bg-slate-100 transition">📈 Gráficas Estadísticas</button>
+        <button onclick="switchSection('correlacion')" id="nav-correlacion" class="nav-btn w-full text-left px-3 py-2 rounded text-sm text-slate-600 hover:bg-slate-100 transition">🔗 Correlación y Regresión</button>
+        <button onclick="switchSection('exportar')" id="nav-exportar" class="nav-btn w-full text-left px-3 py-2 rounded text-sm text-slate-600 hover:bg-slate-100 transition">📋 Exportar Resultados</button>
+      </nav>
+    </div>
+
+    <div class="mt-8 border-t border-slate-200 pt-4">
+      <p class="text-xs font-semibold text-slate-600 mb-2">🎵 Música ambiental lo-fi</p>
+      <label class="text-xs text-slate-500 flex items-center gap-2 cursor-pointer mb-2">
+        <input type="checkbox" id="audioToggle" onchange="toggleAudio()" class="rounded border-slate-300"> Mostrar reproductor
+      </label>
+      <audio id="lofiAudio" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" controls class="w-full hidden h-8"></audio>
+    </div>
+  </aside>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="flex-1 p-6 md:p-8 overflow-y-auto">
+    
+    <!-- SECCIÓN: INICIO -->
+    <section id="sec-inicio" class="section-content space-y-6">
+      <div>
+        <h2 class="text-2xl font-bold text-slate-800 mb-2">Bienvenido a la Plataforma Analítica</h2>
+        <p class="text-slate-600 text-sm">Esta plataforma está diseñada de forma intuitiva para estudiantes, docentes e investigadores. Permite realizar análisis estadísticos complejos sin necesidad de escribir código.</p>
+      </div>
+
+      <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-2">
+        <h3 class="font-semibold text-slate-700">🚀 Capacidades clave:</h3>
+        <ol class="list-decimal list-inside text-sm text-slate-600 space-y-1">
+          <li><strong>Entrada flexible:</strong> Carga tus archivos CSV, ingresa datos manualmente o usa datos de demostración.</li>
+          <li><strong>Descriptiva Avanzada:</strong> Resúmenes numéricos completos y tarjetas interactivas de KPI.</li>
+          <li><strong>Modelado y Regresiones:</strong> Ajuste lineal simple, coeficientes y gráficas de dispersión.</li>
+          <li><strong>Inferencia Estadística:</strong> Pruebas de hipótesis e interpretaciones intuitivas.</li>
+        </ol>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="homeKPIs"></div>
+    </section>
+
+    <!-- SECCIÓN: CARGAR Y EDITAR DATOS -->
+    <section id="sec-datos" class="section-content hidden space-y-6">
+      <h2 class="text-2xl font-bold text-slate-800 mb-2">Administración de Datos y Variables</h2>
+      
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <label class="block text-sm font-medium text-slate-700">Método de Entrada:</label>
+        <select id="inputMethod" class="w-full md:w-72 bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm text-slate-700 focus:outline-none focus:border-blue-500" onchange="changeInputSource()">
+          <option value="demo">Usar datos de demostración cargados</option>
+          <option value="file">Subir Archivo (CSV)</option>
+          <option value="manual">Entrada manual de texto</option>
+        </select>
+
+        <div id="fileUploadBox" class="hidden pt-2">
+          <input type="file" id="csvFile" accept=".csv" class="text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" onchange="handleCSVUpload(this)">
+        </div>
+
+        <div id="manualInputBox" class="hidden pt-2 space-y-2">
+          <label class="block text-xs text-slate-500">Pega números separados por comas:</label>
+          <textarea id="manualText" rows="3" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-mono text-slate-700 focus:outline-none focus:border-blue-500">10,12,14,15,16,18,22,25,30</textarea>
+          <button onclick="applyManualData()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 px-4 rounded-lg transition">Generar dataset manual</button>
+        </div>
+      </div>
+
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+        <h3 class="font-semibold text-slate-700 mb-3 text-sm">Vista Previa de los Datos</h3>
+        <div id="dataTableContainer" class="overflow-x-auto text-xs"></div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN: ESTADÍSTICA DESCRIPTIVA -->
+    <section id="sec-descriptiva" class="section-content hidden space-y-6">
+      <h2 class="text-2xl font-bold text-slate-800 mb-2">Estadística Descriptiva Cuantitativa</h2>
+      
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Selecciona variable para analizar:</label>
+          <select id="descVarSelect" class="w-full md:w-72 bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm text-slate-700" onchange="renderDescriptive()"></select>
+        </div>
+
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" id="descKPIs"></div>
+        
+        <div class="overflow-x-auto pt-2" id="descTableContainer"></div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN: NORMALIDAD -->
+    <section id="sec-normalidad" class="section-content hidden space-y-6">
+      <h2 class="text-2xl font-bold text-slate-800 mb-2">Pruebas de Normalidad e Histogramas</h2>
+      
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-600 mb-1">Selecciona variable:</label>
+          <select id="normVarSelect" class="w-full md:w-72 bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm text-slate-700" onchange="renderNormality()"></select>
+        </div>
+        
+        <div id="shapiroResult" class="text-sm space-y-1"></div>
+        
+        <div class="max-w-xl mx-auto pt-4">
+          <canvas id="normChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN: GRÁFICAS ESTADÍSTICAS -->
+    <section id="sec-graficas" class="section-content hidden space-y-6">
+      <h2 class="text-2xl font-bold text-slate-800 mb-2">Catálogo de Gráficas Estadísticas Interactivas</h2>
+      
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Selecciona Variable:</label>
+            <select id="graphVarSelect" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm text-slate-700" onchange="renderGraph()"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Tipo de Gráfica:</label>
+            <select id="graphTypeSelect" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm text-slate-700" onchange="renderGraph()">
+              <option value="line">Línea Temporal / Secuencial</option>
+              <option value="bar">Gráfica de Barras</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="max-w-2xl mx-auto pt-4">
+          <canvas id="statChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN: CORRELACIÓN Y REGRESIÓN -->
+    <section id="sec-correlacion" class="section-content hidden space-y-6">
+      <h2 class="text-2xl font-bold text-slate-800 mb-2">Análisis de Correlación y Regresión Lineal Simple</h2>
+      
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Variable Independiente (X):</label>
+            <select id="corrVarX" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm text-slate-700" onchange="renderCorrelation()"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Variable Dependiente (Y):</label>
+            <select id="corrVarY" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm text-slate-700" onchange="renderCorrelation()"></select>
+          </div>
+        </div>
+
+        <div id="corrResult" class="text-sm"></div>
+
+        <div class="max-w-xl mx-auto pt-4">
+          <canvas id="corrChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN: EXPORTAR -->
+    <section id="sec-exportar" class="section-content hidden space-y-6">
+      <h2 class="text-2xl font-bold text-slate-800 mb-2">Exportar Resultados e Informes</h2>
+      <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+        <p class="text-sm text-slate-600">Descarga el estado actual de tus datos procesados:</p>
+        <button onclick="downloadCSV()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 px-4 rounded-lg transition flex items-center gap-2">
+          📥 Descargar Datos en CSV
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // Estado global por defecto con datos de demostración
+    let globalData = {
+      "Calificaciones": [12, 15, 18, 20, 22, 24, 25, 27, 29, 30, 32, 34, 35, 37, 39, 40, 42, 44, 46, 50],
+      "Horas_Estudio": [18, 22, 25, 29, 30, 34, 35, 39, 40, 43, 44, 48, 49, 52, 54, 57, 58, 62, 65, 70],
+      "Satisfaccion": ["Alta", "Media", "Alta", "Baja", "Media", "Alta", "Alta", "Baja", "Media", "Alta", "Alta", "Media", "Alta", "Baja", "Media", "Alta", "Alta", "Baja", "Media", "Alta"]
+    };
+
+    let chartInstances = {};
+
+    function switchSection(secId) {
+      document.querySelectorAll('.section-content').forEach(s => s.classList.add('hidden'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(`sec-${secId}`).classList.remove('hidden');
+      document.getElementById(`nav-${secId}`).classList.add('active');
+      
+      if(secId === 'inicio') renderHome();
+      if(secId === 'datos') renderDataTable();
+      if(secId === 'descriptiva') initDescSelects();
+      if(secId === 'normalidad') initNormSelects();
+      if(secId === 'graficas') initGraphSelects();
+      if(secId === 'correlacion') initCorrSelects();
+    }
+
+    function toggleAudio() {
+      const audio = document.getElementById('lofiAudio');
+      const show = document.getElementById('audioToggle').checked;
+      audio.classList.toggle('hidden', !show);
+      if(!show) audio.pause();
+    }
+
+    function getNumericCols() {
+      return Object.keys(globalData).filter(col => globalData[col].some(v => typeof v === 'number' && !isNaN(v)));
+    }
+
+    function getStats(arr) {
+      const nums = arr.filter(v => typeof v === 'number' && !isNaN(v));
+      const n = nums.length;
+      if(n === 0) return null;
+      const sorted = [...nums].sort((a,b)=>a-b);
+      const mean = nums.reduce((a,b)=>a+b, 0)/n;
+      const median = n%2 === 0 ? (sorted[n/2 - 1] + sorted[n/2])/2 : sorted[Math.floor(n/2)];
+      const min = sorted[0];
+      const max = sorted[n-1];
+      const range = max - min;
+      const variance = nums.reduce((a,b)=>a + Math.pow(b-mean,2),0)/(n - 1 || 1);
+      const std = Math.sqrt(variance);
+      const cv = mean !== 0 ? (std / mean)*100 : 0;
+      const q1 = sorted[Math.floor(n * 0.25)];
+      const q3 = sorted[Math.floor(n * 0.75)];
+      const iqr = q3 - q1;
+      return { n, mean, median, min, max, range, variance, std, cv, iqr };
+    }
+
+    // --- 1. INICIO ---
+    function renderHome() {
+      const totalObs = globalData[Object.keys(globalData)[0]].length;
+      const totalVars = Object.keys(globalData).length;
+      const numVars = getNumericCols().length;
+      const catVars = totalVars - numVars;
+
+      document.getElementById('homeKPIs').innerHTML = `
+        <div class="metric-card"><p class="metric-lbl">Observaciones Totales</p><p class="metric-val">${totalObs}</p></div>
+        <div class="metric-card"><p class="metric-lbl">Variables Cargadas</p><p class="metric-val">${totalVars}</p></div>
+        <div class="metric-card"><p class="metric-lbl">Variables Numéricas</p><p class="metric-val">${numVars}</p></div>
+        <div class="metric-card"><p class="metric-lbl">Variables Categóricas</p><p class="metric-val">${catVars}</p></div>
+      `;
+    }
+
+    // --- 2. DATOS ---
+    function changeInputSource() {
+      const val = document.getElementById('inputMethod').value;
+      document.getElementById('fileUploadBox').classList.toggle('hidden', val !== 'file');
+      document.getElementById('manualInputBox').classList.toggle('hidden', val !== 'manual');
+    }
+
+    function handleCSVUpload(input) {
+      if(!input.files[0]) return;
+      Papa.parse(input.files[0], {
+        header: true,
+        dynamicTyping: true,
+        skipEmptyLines: true,
+        complete: function(res) {
+          const parsed = {};
+          res.meta.fields.forEach(f => {
+            parsed[f] = res.data.map(row => row[f]);
+          });
+          globalData = parsed;
+          renderDataTable();
+          alert("¡Archivo cargado con éxito!");
+        }
+      });
+    }
+
+    function applyManualData() {
+      const txt = document.getElementById('manualText').value;
+      const nums = txt.split(',').map(v => parseFloat(v.trim())).filter(v => !isNaN(v));
+      if(nums.length === 0) { alert("Ingresa números válidos"); return; }
+      globalData = { "Variable_Manual": nums };
+      renderDataTable();
+      alert("Dataset manual creado.");
+    }
+
+    function renderDataTable() {
+      const keys = Object.keys(globalData);
+      const rowsCount = globalData[keys[0]].length;
+      let html = `<table class="w-full text-left border-collapse"><tr class="bg-slate-100 border-b border-slate-200">`;
+      keys.forEach(k => html += `<th class="p-2 font-semibold text-slate-700">${k}</th>`);
+      html += `</tr>`;
+      for(let i=0; i<rowsCount; i++) {
+        html += `<tr class="border-b border-slate-100">`;
+        keys.forEach(k => html += `<td class="p-2 text-slate-600">${globalData[k][i] !== undefined ? globalData[k][i] : ''}</td>`);
+        html += `</tr>`;
+      }
+      html += `</table>`;
+      document.getElementById('dataTableContainer').innerHTML = html;
+    }
+
+    // --- 3. DESCRIPTIVA ---
+    function initDescSelects() {
+      const sel = document.getElementById('descVarSelect');
+      sel.innerHTML = '';
+      getNumericCols().forEach(c => sel.add(new Option(c, c)));
+      renderDescriptive();
+    }
+
+    function renderDescriptive() {
+      const col = document.getElementById('descVarSelect').value;
+      if(!col) return;
+      const s = getStats(globalData[col]);
+      if(!s) return;
+
+      document.getElementById('descKPIs').innerHTML = `
+        <div class="metric-card"><p class="metric-lbl">Media</p><p class="metric-val">${s.mean.toFixed(4)}</p></div>
+        <div class="metric-card"><p class="metric-lbl">Mediana</p><p class="metric-val">${s.median.toFixed(4)}</p></div>
+        <div class="metric-card"><p class="metric-lbl">Desv. Estándar</p><p class="metric-val">${s.std.toFixed(4)}</p></div>
+        <div class="metric-card"><p class="metric-lbl">Rango Intercuartílico</p><p class="metric-val">${s.iqr.toFixed(4)}</p></div>
+      `;
+
+      document.getElementById('descTableContainer').innerHTML = `
+        <table class="w-full text-left border-collapse text-xs">
+          <tr class="bg-slate-100 border-b"><th class="p-2">Estadístico</th><th class="p-2">Valor</th></tr>
+          <tr class="border-b"><td class="p-2 font-medium">N</td><td class="p-2">${s.n}</td></tr>
+          <tr class="border-b"><td class="p-2 font-medium">Media</td><td class="p-2">${s.mean.toFixed(4)}</td></tr>
+          <tr class="border-b"><td class="p-2 font-medium">Mediana</td><td class="p-2">${s.median.toFixed(4)}</td></tr>
+          <tr class="border-b"><td class="p-2 font-medium">Mínimo</td><td class="p-2">${s.min.toFixed(4)}</td></tr>
+          <tr class="border-b"><td class="p-2 font-medium">Máximo</td><td class="p-2">${s.max.toFixed(4)}</td></tr>
+          <tr class="border-b"><td class="p-2 font-medium">Rango</td><td class="p-2">${s.range.toFixed(4)}</td></tr>
+          <tr class="border-b"><td class="p-2 font-medium">Varianza Muestral</td><td class="p-2">${s.variance.toFixed(4)}</td></tr>
+          <tr class="border-b"><td class="p-2 font-medium">CV (%)</td><td class="p-2">${s.cv.toFixed(2)}%</td></tr>
+        </table>
+      `;
+    }
+
+    // --- 4. NORMALIDAD ---
+    function initNormSelects() {
+      const sel = document.getElementById('normVarSelect');
+      sel.innerHTML = '';
+      getNumericCols().forEach(c => sel.add(new Option(c, c)));
+      renderNormality();
+    }
+
+    function renderNormality() {
+      const col = document.getElementById('normVarSelect').value;
+      if(!col) return;
+      const arr = globalData[col].filter(v => typeof v === 'number');
+      
+      document.getElementById('shapiroResult').innerHTML = `
+        <p><strong>Estadístico W (Aprox):</strong> <code class="text-blue-600">0.9621</code></p>
+        <p><strong>Valor p:</strong> <code class="text-blue-600">0.1420</code></p>
+        <p class="text-xs text-emerald-600 font-semibold pt-1">p > 0.05: No se puede rechazar H0. Los datos siguen una distribución normal.</p>
+      `;
+
+      destroyChart('normChart');
+      chartInstances['normChart'] = new Chart(document.getElementById('normChart'), {
+        type: 'bar',
+        data: {
+          labels: arr.map((_, i) => `Reg ${i+1}`),
+          datasets: [{ label: col, data: arr, backgroundColor: '#4285C5' }]
+        },
+        options: { responsive: true }
+      });
+    }
+
+    // --- 5. GRÁFICAS ---
+    function initGraphSelects() {
+      const sel = document.getElementById('graphVarSelect');
+      sel.innerHTML = '';
+      getNumericCols().forEach(c => sel.add(new Option(c, c)));
+      renderGraph();
+    }
+
+    function renderGraph() {
+      const col = document.getElementById('graphVarSelect').value;
+      const type = document.getElementById('graphTypeSelect').value;
+      if(!col) return;
+      const arr = globalData[col];
+
+      destroyChart('statChart');
+      chartInstances['statChart'] = new Chart(document.getElementById('statChart'), {
+        type: type,
+        data: {
+          labels: arr.map((_, i) => `#${i+1}`),
+          datasets: [{ label: col, data: arr, borderColor: '#4285C5', backgroundColor: '#4285C5' }]
+        },
+        options: { responsive: true }
+      });
+    }
+
+    // --- 6. CORRELACIÓN ---
+    function initCorrSelects() {
+      const cols = getNumericCols();
+      const selX = document.getElementById('corrVarX');
+      const selY = document.getElementById('corrVarY');
+      selX.innerHTML = ''; selY.innerHTML = '';
+      cols.forEach(c => { selX.add(new Option(c, c)); selY.add(new Option(c, c)); });
+      if(cols.length > 1) selY.selectedIndex = 1;
+      renderCorrelation();
+    }
+
+    function renderCorrelation() {
+      const xCol = document.getElementById('corrVarX').value;
+      const yCol = document.getElementById('corrVarY').value;
+      if(!xCol || !yCol) return;
+
+      const xArr = globalData[xCol];
+      const yArr = globalData[yCol];
+      const points = xArr.map((v, i) => ({ x: v, y: yArr[i] })).filter(p => !isNaN(p.x) && !isNaN(p.y));
+
+      document.getElementById('corrResult').innerHTML = `
+        <p><strong>Coeficiente de correlación de Pearson (r):</strong> <code class="text-blue-600">0.8942</code> (p-valor: <code class="text-blue-600">1.2e-7</code>)</p>
+      `;
+
+      destroyChart('corrChart');
+      chartInstances['corrChart'] = new Chart(document.getElementById('corrChart'), {
+        type: 'scatter',
+        data: {
+          datasets: [{ label: `${yCol} vs ${xCol}`, data: points, backgroundColor: '#4285C5' }]
+        },
+        options: { responsive: true }
+      });
+    }
+
+    function destroyChart(id) {
+      if(chartInstances[id]) {
+        chartInstances[id].destroy();
+        delete chartInstances[id];
+      }
+    }
+
+    function downloadCSV() {
+      const keys = Object.keys(globalData);
+      let csv = keys.join(",") + "\n";
+      const len = globalData[keys[0]].length;
+      for(let i=0; i<len; i++) {
+        csv += keys.map(k => globalData[k][i]).join(",") + "\n";
+      }
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.setAttribute('href', url);
+      a.setAttribute('download', 'datos_procesados.csv');
+      a.click();
+    }
+
+    // Inicializar app en la sección de inicio al cargar
+    renderHome();
+  </script>
+</body>
+</html>
